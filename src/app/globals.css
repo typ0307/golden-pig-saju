@@ -1,0 +1,120 @@
+@import "tailwindcss";
+
+@theme {
+  /* 황금돼지 사주 — 전통 점집 무드 디자인 토큰 */
+  --color-ink: #0b0910;
+  --color-ink-2: #120e18;
+  --color-card: #171220;
+  --color-card-2: #1d1728;
+  --color-line: #2a2138;
+  --color-gold: #d4af37;
+  --color-gold-2: #e8ce7a;
+  --color-vermilion: #c0392b;
+  --color-ivory: #f2ead3;
+  --color-muted: #9c93a8;
+
+  /* 오행 5색 */
+  --color-el-wood: #4caf6d;
+  --color-el-fire: #e05252;
+  --color-el-earth: #d4af37;
+  --color-el-metal: #d8dce4;
+  --color-el-water: #5b8dd6;
+
+  --font-serif-ko: "Noto Serif KR", "Nanum Myeongjo", "Apple SD Gothic Neo", serif;
+  --font-sans-ko: "Pretendard", "Noto Sans KR", "Apple SD Gothic Neo", -apple-system, sans-serif;
+}
+
+html {
+  color-scheme: dark;
+}
+
+body {
+  background-color: var(--color-ink);
+  color: var(--color-ivory);
+  font-family: var(--font-sans-ko);
+  /* 먹색 배경 + 골드 은은한 방사광 */
+  background-image:
+    radial-gradient(900px 480px at 50% -10%, rgba(212, 175, 55, 0.14), transparent 65%),
+    radial-gradient(700px 420px at 100% 110%, rgba(192, 57, 43, 0.07), transparent 60%);
+  background-attachment: fixed;
+}
+
+/* 명식 한자 대형 표기용 */
+.font-hanja {
+  font-family: var(--font-serif-ko);
+  font-weight: 600;
+}
+
+/* 골드 그라데이션 텍스트 */
+.text-gold-gradient {
+  background: linear-gradient(120deg, #e8ce7a 0%, #d4af37 45%, #b8860b 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* 스트리밍 커서 */
+.stream-caret::after {
+  content: "▍";
+  color: var(--color-gold);
+  animation: caret-blink 0.9s steps(1) infinite;
+}
+
+@keyframes caret-blink {
+  50% {
+    opacity: 0;
+  }
+}
+
+/* 스켈레톤 반짝임 */
+.skeleton {
+  position: relative;
+  overflow: hidden;
+  background-color: var(--color-card-2);
+  border-radius: 0.5rem;
+}
+
+.skeleton::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background-image: linear-gradient(
+    90deg,
+    transparent,
+    rgba(212, 175, 55, 0.08),
+    transparent
+  );
+  animation: shimmer 1.6s infinite;
+}
+
+@keyframes shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+/* 다크 셀렉트/인풋 공통 */
+.field-input {
+  width: 100%;
+  border-radius: 0.75rem;
+  border: 1px solid var(--color-line);
+  background-color: var(--color-ink-2);
+  padding: 0.75rem 0.875rem;
+  font-size: 0.95rem;
+  color: var(--color-ivory);
+  outline: none;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%239c93a8' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+}
+
+.field-input:focus {
+  border-color: var(--color-gold);
+  box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.15);
+}
+
+.field-input:disabled {
+  opacity: 0.5;
+}
