@@ -9,6 +9,8 @@ import type { SajuCore } from "@/lib/saju/types";
 interface InterpretationViewProps {
   core: SajuCore;
   input: { gender: "male" | "female"; name?: string; timeSlot: number | null };
+  /** 풀이가 완성되거나(자동/수동 중지) 갱신될 때 전체 텍스트를 상위로 전달 */
+  onComplete?: (text: string) => void;
 }
 
 /** 마크다운 최소 렌더: ## 헤딩 / **굵게** / 문단만 지원 */
@@ -56,13 +58,19 @@ function bold(text: string) {
 /**
  * 메인 사주 풀이 — SSE 스트리밍 실시간 렌더링 + Toast/재시도.
  */
-export function InterpretationView({ core, input }: InterpretationViewProps) {
+export function InterpretationView({
+  core,
+  input,
+  onComplete,
+}: InterpretationViewProps) {
   const { text, state, start, stop, reset } = useTextStream();
   const startedRef = useRef(false);
 
   const run = useCallback(() => {
-    void start("/api/interpret", { core, input });
-  }, [start, core, input]);
+    void start("/api/interpret", { core, input }, (full) =>
+      onComplete?.(full),
+    );
+  }, [start, core, input, onComplete]);
 
   // 마운트 시 1회 자동 시작
   useEffect(() => {
@@ -111,7 +119,10 @@ export function InterpretationView({ core, input }: InterpretationViewProps) {
         {state === "streaming" && (
           <button
             type="button"
-            onClick={stop}
+            onClick={() => {
+              stop();
+              onComplete?.(text); // 부분 텍스트라도 메일 수신 가능하도록 전달
+            }}
             className="inline-flex items-center gap-1.5 rounded-lg border border-line px-3 py-1.5 text-xs text-ivory/70 hover:border-vermilion/60 hover:text-vermilion"
           >
             <StopCircle className="size-3.5" aria-hidden />

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useSyncExternalStore } from "react";
+import { useMemo, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import type { SajuResult, SajuCore } from "@/lib/saju/types";
 import { MyeongsigTable } from "@/components/result/MyeongsigTable";
@@ -9,6 +9,7 @@ import { DayMasterCard } from "@/components/result/DayMasterCard";
 import {
   InterpretationView,
 } from "@/components/result/InterpretationView";
+import { MailReceiver } from "@/components/result/MailReceiver";
 import { AskPanel } from "@/components/result/AskPanel";
 import { RotateCcw } from "lucide-react";
 
@@ -21,6 +22,9 @@ interface StoredResult {
 const subscribeNoop = () => () => {};
 
 export default function ResultPage() {
+  // 메일 수신용: 완성된 메인 풀이 텍스트를 InterpretationView에서 들어올림
+  const [interpretationText, setInterpretationText] = useState("");
+
   // sessionStorage는 SSR에 없으므로 서버 스냅샷은 null, 클라이언트에서만 읽는다
   const raw = useSyncExternalStore(
     subscribeNoop,
@@ -93,10 +97,29 @@ export default function ResultPage() {
       <ElementChart saju={saju} />
 
       {/* 4. 메인 풀이 (SSE 스트리밍) */}
-      <InterpretationView core={core} input={input} />
+      <InterpretationView
+        core={core}
+        input={input}
+        onComplete={setInterpretationText}
+      />
 
-      {/* 5. 추가 질문 Q&A */}
+      {/* 5. 메일로 받아보기 (선택) */}
+      <MailReceiver
+        name={input.name || "고객"}
+        saju={saju}
+        interpretation={interpretationText}
+        ready={interpretationText.trim().length > 100}
+      />
+
+      {/* 6. 추가 질문 Q&A */}
       <AskPanel core={core} />
+
+      {/* 개인정보 안심 문구 */}
+      <footer className="pt-2 text-center text-[11px] leading-5 text-muted">
+        생년월시는 풀이를 만드는 데에만 쓰이고 서버에 남기지 않습니다.
+        <br />
+        결과 화면은 이 브라우저에서만 보여요 — 창을 닫으면 함께 사라집니다.
+      </footer>
     </main>
   );
 }

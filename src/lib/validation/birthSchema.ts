@@ -7,11 +7,10 @@ import { MAX_BIRTH_YEAR, MIN_BIRTH_YEAR, TIME_SLOTS } from "@/lib/saju/constants
 export const birthInputSchema = z
   .object({
     name: z
-      .string()
+      .string({ error: "이름을 입력해 주세요." })
       .trim()
-      .max(12, "이름은 12자 이하로 입력해 주세요.")
-      .optional()
-      .default(""),
+      .min(1, "이름을 입력해 주세요.")
+      .max(12, "이름은 12자 이하로 입력해 주세요."),
     gender: z.enum(["male", "female"], {
       error: "성별을 선택해 주세요.",
     }),
@@ -101,3 +100,78 @@ export const askInputSchema = z.object({
     }),
   }),
 });
+
+/* ------------------------------------------------------------------ */
+/* 메일 수신 스키마                                                     */
+/* ------------------------------------------------------------------ */
+
+const mailCharSchema = z.object({
+  han: z.string().length(1),
+  kor: z.string(),
+  element: z.enum(["wood", "fire", "earth", "metal", "water"]),
+  polarity: z.enum(["yang", "yin"]),
+  tenGod: z.string(),
+});
+
+const mailPillarSchema = z.object({
+  label: z.string(),
+  title: z.string(),
+  stem: mailCharSchema,
+  branch: mailCharSchema,
+});
+
+/** POST /api/mail — 풀이 결과 메일 발송 (받고 싶은 사람만 opt-in) */
+export const mailInputSchema = z.object({
+  email: z
+    .string()
+    .trim()
+    .toLowerCase()
+    .max(100)
+    .pipe(z.email("이메일 형식이 올바르지 않습니다.")),
+  name: z
+    .string()
+    .trim()
+    .min(1, "이름이 없습니다. 처음부터 다시 입력해 주세요.")
+    .max(12),
+  /** Cloudflare Turnstile 토큰 (사이트 키 설정 시 필수, 미설정 시 무시) */
+  turnstileToken: z.string().max(4096).optional(),
+  interpretation: z
+    .string()
+    .min(50, "풀이 결과가 아직 완성되지 않았습니다.")
+    .max(8000),
+  saju: z.object({
+    pillars: z.tuple([
+      mailPillarSchema,
+      mailPillarSchema,
+      mailPillarSchema,
+      mailPillarSchema.nullable(),
+    ]),
+    elements: z.record(
+      z.enum(["wood", "fire", "earth", "metal", "water"]),
+      z.number(),
+    ),
+    dayMaster: z.object({
+      han: z.string(),
+      kor: z.string(),
+      element: z.enum(["wood", "fire", "earth", "metal", "water"]),
+      polarity: z.enum(["yang", "yin"]),
+      keyword: z.string(),
+    }),
+    solar: z.object({
+      year: z.number(),
+      month: z.number(),
+      day: z.number(),
+    }),
+    lunar: z
+      .object({
+        year: z.number(),
+        month: z.number(),
+        day: z.number(),
+        isLeapMonth: z.boolean(),
+      })
+      .nullable(),
+    dayGanji: z.string(),
+  }),
+});
+
+export type MailInput = z.infer<typeof mailInputSchema>;

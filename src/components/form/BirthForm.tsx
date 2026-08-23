@@ -61,7 +61,9 @@ export function BirthForm() {
 
   const days = useMemo(() => {
     const maxDay =
-      calendar === "lunar" ? 30 : new Date(Date.UTC(year, month, 0)).getUTCDate();
+      calendar === "lunar"
+        ? 30
+        : new Date(Date.UTC(year, month, 0)).getUTCDate();
     return Array.from({ length: maxDay }, (_, i) => i + 1);
   }, [calendar, year, month]);
 
@@ -106,17 +108,24 @@ export function BirthForm() {
       {/* 이름 */}
       <div>
         <label htmlFor="name" className={labelCls}>
-          이름
+          이름 <span className="text-gold">*</span>
         </label>
         <input
           id="name"
           type="text"
           placeholder="이름 또는 별명"
           maxLength={12}
+          required
+          aria-invalid={errors.name ? true : undefined}
           className={selectCls}
           style={{ backgroundImage: "none" }}
           {...register("name")}
         />
+        {errors.name && (
+          <p className="mt-1.5 text-xs text-vermilion">
+            {errors.name.message}
+          </p>
+        )}
       </div>
 
       {/* 성별 */}
@@ -147,7 +156,9 @@ export function BirthForm() {
           ))}
         </div>
         {errors.gender && (
-          <p className="mt-1.5 text-xs text-vermilion">{errors.gender.message}</p>
+          <p className="mt-1.5 text-xs text-vermilion">
+            {errors.gender.message}
+          </p>
         )}
       </div>
 
@@ -194,21 +205,33 @@ export function BirthForm() {
       <div>
         <span className={labelCls}>생년월일</span>
         <div className="grid grid-cols-3 gap-2">
-          <select aria-label="출생 연도" className={selectCls} {...register("year", { valueAsNumber: true })}>
+          <select
+            aria-label="출생 연도"
+            className={selectCls}
+            {...register("year", { valueAsNumber: true })}
+          >
             {YEARS.map((y) => (
               <option key={y} value={y}>
                 {y}년
               </option>
             ))}
           </select>
-          <select aria-label="출생 월" className={selectCls} {...register("month", { valueAsNumber: true })}>
+          <select
+            aria-label="출생 월"
+            className={selectCls}
+            {...register("month", { valueAsNumber: true })}
+          >
             {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
               <option key={m} value={m}>
                 {m}월
               </option>
             ))}
           </select>
-          <select aria-label="출생 일" className={selectCls} {...register("day", { valueAsNumber: true })}>
+          <select
+            aria-label="출생 일"
+            className={selectCls}
+            {...register("day", { valueAsNumber: true })}
+          >
             {days.map((d) => (
               <option key={d} value={d}>
                 {d}일
@@ -233,12 +256,16 @@ export function BirthForm() {
           className={selectCls}
           value={watch("timeSlot") ?? ""}
           onChange={(e) =>
-            setValue("timeSlot", e.target.value === "" ? null : Number(e.target.value), {
-              shouldValidate: true,
-            })
+            setValue(
+              "timeSlot",
+              e.target.value === "" ? null : Number(e.target.value),
+              {
+                shouldValidate: true,
+              },
+            )
           }
         >
-          <option value="">시간 모름 (시주 제외 6자 해석)</option>
+          <option value="">시간 모름</option>
           {TIME_SLOTS.map((slot, i) => (
             <option key={slot.label} value={i}>
               {slot.label} · {slot.range}
@@ -265,6 +292,12 @@ export function BirthForm() {
           </span>
         )}
       </button>
+
+      {/* 개인정보 안심 문구 */}
+      <p className="text-center text-xs text-muted">
+        입력한 정보는 풀이 생성에만 사용되고 저장되지 않아요 · 가입도 필요
+        없어요
+      </p>
     </form>
   );
 }

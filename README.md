@@ -52,14 +52,17 @@ pnpm dev
 | `CHEAPERINFERENCE_BASE_URL` | 기본 `https://api.cheaperinference.ai/v1` |
 | `AI_MODEL` | cheaperinference 모델, 기본 `gemini-3.7-flash` |
 | `NEXT_PUBLIC_AI_MODEL` | 결과 화면 표시용 모델 라벨 |
+| `MAIL_GMAIL_USER` | 메일 발송용 Gmail 주소 |
+| `MAIL_GMAIL_APP_PASSWORD` | Google 앱 비밀번호 16자리 (2단계 인증 후 발급) |
 
 ## API 라우트
 
 | 라우트 | 설명 |
 | --- | --- |
-| `POST /api/saju` | zod 재검증 → 음력이면 양력 변환 → 4주 팔자/오행/일간 JSON |
+| `POST /api/saju` | zod 재검증 → 음력이면 양력 변환 → 4주 팔자/오행/일간 JSON (이름 필수) |
 | `POST /api/interpret` | 메인 AI 풀이 SSE 스트리밍 (성격·재물운·직업운) |
 | `POST /api/interpret/ask` | 추가 질문 SSE — 명식 JSON + 질문만 전송, `maxOutputTokens: 400` |
+| `POST /api/mail` | 풀이 결과 이메일 발송 (Gmail SMTP, opt-in) — 동일 주소 60초 쿨다운 |
 
 ## 토큰 최적화 (추가 질문)
 
