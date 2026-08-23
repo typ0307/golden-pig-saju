@@ -26,7 +26,7 @@ function providerConfig(id: AiProviderId): ProviderConfig {
         baseURL:
           process.env.OPENROUTER_BASE_URL ?? "https://openrouter.ai/api/v1",
         apiKey: process.env.OPENROUTER_API_KEY ?? "",
-        model: process.env.OPENROUTER_MODEL ?? "upstage/solar-pro4",
+        model: process.env.OPENROUTER_API_MODEL ?? "upstage/solar-pro4",
         headers: {
           "HTTP-Referer":
             process.env.OPENROUTER_REFERER ??
@@ -40,7 +40,7 @@ function providerConfig(id: AiProviderId): ProviderConfig {
           process.env.CHEAPERINFERENCE_BASE_URL ??
           "https://api.cheaperinference.ai/v1",
         apiKey: process.env.CHEAPERINFERENCE_API_KEY ?? "",
-        model: process.env.AI_MODEL ?? "gemini-3.7-flash",
+        model: process.env.CHEAPERINFERENCE_API_MODEL ?? "gemini-3.7-flash",
       };
   }
 }
@@ -50,7 +50,7 @@ export const AI_PROVIDER: AiProviderId =
     ? "cheaperinference"
     : "openrouter";
 
-export const AI_MODEL = providerConfig(AI_PROVIDER).model;
+export const ACTIVE_MODEL = providerConfig(AI_PROVIDER).model;
 
 const provider = createOpenAICompatible({
   name: AI_PROVIDER,
@@ -70,5 +70,5 @@ export function assertAiConfigured(): void {
 }
 
 export function aiModel() {
-  return provider.chatModel(AI_MODEL);
+  return provider.chatModel(ACTIVE_MODEL);
 }

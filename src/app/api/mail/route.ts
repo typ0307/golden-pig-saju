@@ -11,6 +11,12 @@ export const runtime = "nodejs";
 export const maxDuration = 30;
 
 /**
+ * 이 엔드포인트를 보호하는 Turnstile 대표면(action) 이름.
+ * 프론트엔드 위젯의 action 속성과 반드시 일치해야 한다.
+ */
+const MAIL_SEND_ACTION = "mail-send";
+
+/**
  * 메일 발송 스팸 방지: 동일 이메일 60초 쿨다운 (프로세스 메모리 기준 best-effort).
  */
 const COOLDOWN_MS = 60_000;
@@ -40,13 +46,17 @@ export async function POST(req: Request) {
 
   const { email } = parsed.data;
 
-  // 로봇 방지 — Turnstile 토큰 서버 검증 (키 설정 시에만 동작)
+  // 로봇 방지 — Turnstile canonical siteverify (키 설정 시에만 동작)
   if (isTurnstileEnabled()) {
     const payload = raw as { turnstileToken?: string };
     const ip =
       req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? null;
-    const verdict = await verifyTurnstileToken(payload.turnstileToken, ip);
+    const verdict = await verifyTurnstileToken(payload.turnstileToken, {
+      action: MAIL_SEND_ACTION,
+      ip,
+    });
     if (!verdict.ok) {
+      console.warn("[/api/mail] turnstile rejected:", verdict.reason);
       return NextResponse.json(
         { error: TURNSTILE_FAIL_MESSAGE, code: "TURNSTILE_FAILED" },
         { status: 403 },

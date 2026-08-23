@@ -9,9 +9,18 @@ import type { SajuResult } from "@/lib/saju/types";
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
 /**
+ * 보호 대표면(action) — 서버 /api/mail의 MAIL_SEND_ACTION과 일치해야 한다.
+ * 1~32자, 문자/숫자/언더스코어/하이픈만 허용(Cloudflare 규칙).
+ */
+const MAIL_SEND_ACTION = "mail-send";
+
+/**
  * 메일로 받아보기 — 받고 싶은 사람만 선택(opt-in)하는 발송 폼.
  * 풀이가 완성된 뒤에만 활성화된다.
  * Turnstile 사이트 키가 설정된 경우 로봇 방지 체크를 함께 표시한다.
+ *
+ * 토큰 수명 주기: Turnstile 토큰은 1회용이므로 발송 요청이 끝나면(성공/실패
+ * 무관) 위젯을 reset해 새 검증을 받도록 한다.
  */
 export function MailReceiver({
   name,
@@ -64,11 +73,6 @@ export function MailReceiver({
         code?: string;
       };
       if (!res.ok || !data.ok) {
-        // 토큰이 만료/실패한 경우 위젯 리셋해 재도록 유도
-        if (data.code === "TURNSTILE_FAILED") {
-          setTurnstileToken(null);
-          turnstile?.reset();
-        }
         toast.error(data.error ?? "메일 발송에 실패했습니다.");
         return;
       }
@@ -80,6 +84,12 @@ export function MailReceiver({
       );
     } finally {
       setSending(false);
+      // 토큰은 1회용: 요청이 끝났으면(성공/실패 무관) 위젯을 reset해
+      // 다음 발송 시 새 검증 토큰을 받도록 한다.
+      if (siteKey) {
+        setTurnstileToken(null);
+        turnstile?.reset();
+      }
     }
   }
 
@@ -158,6 +168,7 @@ export function MailReceiver({
             <div className="mt-3">
               <Turnstile
                 sitekey={siteKey}
+                action={MAIL_SEND_ACTION}
                 onSuccess={handleVerify}
                 onExpire={handleExpire}
                 theme="dark"

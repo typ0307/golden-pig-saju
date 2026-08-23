@@ -1,24 +1,36 @@
 import { NextResponse } from "next/server";
 import { streamText } from "ai";
+import { z } from "zod";
 import { aiModel, assertAiConfigured } from "@/lib/ai/client";
 import {
   MAIN_FORMAT_RULES,
   MAIN_SYSTEM_PROMPT,
   buildMainUserPrompt,
 } from "@/lib/ai/prompts";
-import { birthInputSchema } from "@/lib/validation/birthSchema";
+import { TIME_SLOTS } from "@/lib/saju/constants";
 import type { SajuCore } from "@/lib/saju/types";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
 
+/**
+ * 이 라우트의 입력 재검증 — 풀이에 실제로 쓰이는 필드만 검증한다.
+ * (birthInputSchema의 name은 필수지만 풀이에는 이름이 선택이므로 여기서는 느슨하게)
+ */
+const interpretInputSchema = z.object({
+  gender: z.enum(["male", "female"]),
+  name: z.string().trim().max(12).optional(),
+  timeSlot: z
+    .number()
+    .int()
+    .min(0)
+    .max(TIME_SLOTS.length - 1)
+    .nullable(),
+});
+
 interface InterpretBody {
   core: SajuCore;
-  input: {
-    gender: "male" | "female";
-    name?: string;
-    timeSlot: number | null;
-  };
+  input: z.infer<typeof interpretInputSchema>;
 }
 
 /**
@@ -43,20 +55,14 @@ export async function POST(req: Request) {
     );
   }
   // 성별 등 최소 형식 재검증 (명식은 서버에서 산출한 값 신뢰)
-  const base = birthInputSchema.safeParse({
-    gender: body.input.gender,
-    calendar: "solar",
-    year: 2000,
-    month: 1,
-    day: 1,
-    timeSlot: body.input.timeSlot,
-  });
+  const base = interpretInputSchema.safeParse(body.input);
   if (!base.success) {
     return NextResponse.json(
       { error: "요청 값이 올바르지 않습니다." },
       { status: 400 },
     );
   }
+  const input = base.data;
 
   try {
     assertAiConfigured();
@@ -72,9 +78,9 @@ export async function POST(req: Request) {
       model: aiModel(),
       system: `${MAIN_SYSTEM_PROMPT}\n\n${MAIN_FORMAT_RULES}`,
       prompt: buildMainUserPrompt(body.core, {
-        gender: body.input.gender,
-        name: body.input.name,
-        timeKnown: body.input.timeSlot !== null,
+        gender: input.gender,
+        name: input.name,
+        timeKnown: input.timeSlot !== null,
       }),
       temperature: 0.7,
       maxOutputTokens: 1600,

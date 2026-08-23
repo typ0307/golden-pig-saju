@@ -134,7 +134,7 @@ export const mailInputSchema = z.object({
     .min(1, "이름이 없습니다. 처음부터 다시 입력해 주세요.")
     .max(12),
   /** Cloudflare Turnstile 토큰 (사이트 키 설정 시 필수, 미설정 시 무시) */
-  turnstileToken: z.string().max(4096).optional(),
+  turnstileToken: z.string().max(2048).optional(),
   interpretation: z
     .string()
     .min(50, "풀이 결과가 아직 완성되지 않았습니다.")
