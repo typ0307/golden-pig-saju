@@ -3,7 +3,7 @@ import { assertMailConfigured, sendSajuMail } from "@/lib/mailer";
 import { mailInputSchema } from "@/lib/validation/birthSchema";
 import {
   isTurnstileEnabled,
-  TURNSTILE_FAIL_MESSAGE,
+  turnstileFailMessage,
   verifyTurnstileToken,
 } from "@/lib/turnstile";
 
@@ -58,7 +58,10 @@ export async function POST(req: Request) {
     if (!verdict.ok) {
       console.warn("[/api/mail] turnstile rejected:", verdict.reason);
       return NextResponse.json(
-        { error: TURNSTILE_FAIL_MESSAGE, code: "TURNSTILE_FAILED" },
+        {
+          error: turnstileFailMessage(verdict.reason),
+          code: "TURNSTILE_FAILED",
+        },
         { status: 403 },
       );
     }

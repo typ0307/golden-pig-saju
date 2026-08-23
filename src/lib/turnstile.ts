@@ -34,9 +34,23 @@ function allowedHostnames(): Set<string> {
   return new Set(
     (process.env.TURNSTILE_HOSTNAMES ?? "")
       .split(",")
-      .map((h) => h.trim().toLowerCase())
+      .map((h) => normalizeHostname(h))
       .filter(Boolean),
   );
+}
+
+/**
+ * hostname 정규화 — 사용자가 프로토콜·포트·경로를 붙여 넣어도 호스트명만 추출.
+ * 예: "https://goldenpigsaju.vercel.app/" → "goldenpigsaju.vercel.app"
+ */
+function normalizeHostname(raw: string): string {
+  let host = raw.trim().toLowerCase();
+  if (!host) return "";
+  host = host.replace(/^[a-z][a-z0-9+.-]*:\/\//, ""); // 프로토콜 제거
+  host = host.replace(/^[^a-z0-9.]+|[^a-z0-9.-]+$/g, ""); // 선행 //, 후행 / 등
+  host = host.split("/")[0].split("?")[0].split("#")[0]; // 경로·쿼리 제거
+  host = host.split(":")[0]; // 포트 제거
+  return host;
 }
 
 export interface TurnstileVerdict {
@@ -105,7 +119,7 @@ export async function verifyTurnstileToken(
   // 계약 3: hostname 허용목록
   if (
     !result.hostname ||
-    !expectedHostnames.has(result.hostname.toLowerCase())
+    !expectedHostnames.has(normalizeHostname(result.hostname))
   ) {
     return { ok: false, reason: "hostname_mismatch" };
   }
@@ -113,6 +127,10 @@ export async function verifyTurnstileToken(
   return { ok: true };
 }
 
-/** 검증 실패 시 클라이언트에 내보낼 고정 메시지 (내부 사유 노출 방지) */
-export const TURNSTILE_FAIL_MESSAGE =
-  "자동 입력 방지 확인에 실패했어요. 체크박스를 다시 눌러 주세요.";
+/** 검증 실패 시 클라이언트에 내보낼 메시지 (사유별 구분) */
+export function turnstileFailMessage(reason?: string): string {
+  if (reason === "misconfigured") {
+    return "메일 서비스 보안 설정이 완료되지 않았어요. 잠시 후 다시 시도해 주세요.";
+  }
+  return "자동 입력 방지 확인에 실패했어요. 체크박스를 다시 눌러 주세요.";
+}
