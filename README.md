@@ -1,5 +1,7 @@
 # 황금돼지 사주 (Golden Pig Saju)
 
+**배포**: https://goldenpigsaju.vercel.app/ | **소스**: https://github.com/typ0307/golden-pig-saju
+
 생년월시만 입력하면 사주팔자를 짚어주고, 성격 · 재물운 · 직업운을 따뜻하게
 풀이해 주는 웹 서비스입니다. 만세력은 한국천문연구원 공공데이터포털 데이터
 기반으로 산출합니다.
