@@ -11,6 +11,8 @@
   "dependencies": {
     "@ai-sdk/openai-compatible": "^3.0.35",
     "@hookform/resolvers": "^5.9.1",
+    "@upstash/ratelimit": "^2.0.8",
+    "@upstash/redis": "^1.38.2",
     "ai": "^7.0.77",
     "astronomy-engine": "^2.1.19",
     "fast-xml-parser": "^5.11.0",

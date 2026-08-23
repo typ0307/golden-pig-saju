@@ -6,6 +6,7 @@ import {
   turnstileFailMessage,
   verifyTurnstileToken,
 } from "@/lib/turnstile";
+import { checkRateLimit, clientIp } from "@/lib/rateLimit";
 
 export const runtime = "nodejs";
 export const maxDuration = 30;
@@ -23,6 +24,20 @@ const COOLDOWN_MS = 60_000;
 const lastSent = new Map<string, number>();
 
 export async function POST(req: Request) {
+  // IP 비율 제한 (5회/분) — Turnstile과 별개의 추가 안전망
+  const rate = await checkRateLimit(clientIp(req), "/api/mail");
+  if (!rate.ok) {
+    return NextResponse.json(
+      {
+        error: `요청이 너무 많습니다. ${rate.retryAfter}초 후 다시 시도해 주세요.`,
+      },
+      {
+        status: 429,
+        headers: { "Retry-After": String(rate.retryAfter ?? 60) },
+      },
+    );
+  }
+
   let raw: unknown;
   try {
     raw = await req.json();

@@ -9,6 +9,7 @@ import {
 } from "@/lib/ai/prompts";
 import { TIME_SLOTS } from "@/lib/saju/constants";
 import type { SajuCore } from "@/lib/saju/types";
+import { checkRateLimit, clientIp } from "@/lib/rateLimit";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -38,6 +39,20 @@ interface InterpretBody {
  * 요청 페이로드는 명식 핵심 JSON만 받아 입력 토큰을 최소화한다.
  */
 export async function POST(req: Request) {
+  // IP 비율 제한 (10회/분) — 비용이 드는 LLM 호출 방어
+  const rate = await checkRateLimit(clientIp(req), "/api/interpret");
+  if (!rate.ok) {
+    return NextResponse.json(
+      {
+        error: `요청이 너무 많습니다. ${rate.retryAfter}초 후 다시 시도해 주세요.`,
+      },
+      {
+        status: 429,
+        headers: { "Retry-After": String(rate.retryAfter ?? 60) },
+      },
+    );
+  }
+
   let body: InterpretBody | null = null;
   try {
     body = (await req.json()) as InterpretBody;

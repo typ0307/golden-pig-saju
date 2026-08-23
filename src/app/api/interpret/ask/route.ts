@@ -3,6 +3,7 @@ import { streamText } from "ai";
 import { aiModel, assertAiConfigured } from "@/lib/ai/client";
 import { ASK_SYSTEM_PROMPT } from "@/lib/ai/prompts";
 import { askInputSchema } from "@/lib/validation/birthSchema";
+import { checkRateLimit, clientIp } from "@/lib/rateLimit";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -16,9 +17,23 @@ const ASK_MAX_OUTPUT_TOKENS = 400;
  * 토큰 최적화(프롬프트 지시 준수):
  *   - 이전 풀이 원문을 보내지 않고 시스템 프롬프트 + 명식 핵심 JSON + 질문만 전송
  *   - maxOutputTokens 400으로 출력 통제
- *   - 질문 횟수(3회)는 서버가 무상태이므로 클라 상태로 관리하되 스키마로 입력 검증
+ *   - 질문 횟수(3회)는 서버가 무상태이므로 클라 상태로 관리하되 스키마로 입력 검증 — IP 비율 제한 보조
  */
 export async function POST(req: Request) {
+  // IP 비율 제한 (10회/분)
+  const rate = await checkRateLimit(clientIp(req), "/api/interpret/ask");
+  if (!rate.ok) {
+    return NextResponse.json(
+      {
+        error: `요청이 너무 많습니다. ${rate.retryAfter}초 후 다시 시도해 주세요.`,
+      },
+      {
+        status: 429,
+        headers: { "Retry-After": String(rate.retryAfter ?? 60) },
+      },
+    );
+  }
+
   let raw: unknown;
   try {
     raw = await req.json();

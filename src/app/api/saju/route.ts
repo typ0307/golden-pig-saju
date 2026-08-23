@@ -3,15 +3,30 @@ import { assembleSaju, toSajuCore } from "@/lib/saju/pillars";
 import { lunarToSolar } from "@/lib/saju/kasi";
 import { birthInputSchema } from "@/lib/validation/birthSchema";
 import { KasiError } from "@/lib/saju/kasi";
+import { checkRateLimit, clientIp } from "@/lib/rateLimit";
 
 export const runtime = "nodejs";
 
 /**
  * POST /api/saju — 만세력 산출.
- * 1) zod 서버 재검증 → 2) 음력이면 KASI 음양력 API로 양력 변환
- * 3) KASI 일진(일주) + 24절기 절입시각(연주·월주) + 시두법(시주) 조립
+ * 1) IP 비율 제한 → 2) zod 서버 재검증 → 3) 음력이면 KASI 음양력 API로 양력 변환
+ * 4) KASI 일진(일주) + 24절기 절입시각(연주·월주) + 시두법(시주) 조립
  */
 export async function POST(req: Request) {
+  // IP 비율 제한 (30회/분)
+  const rate = await checkRateLimit(clientIp(req), "/api/saju");
+  if (!rate.ok) {
+    return NextResponse.json(
+      {
+        error: `요청이 너무 많습니다. ${rate.retryAfter}초 후 다시 시도해 주세요.`,
+      },
+      {
+        status: 429,
+        headers: { "Retry-After": String(rate.retryAfter ?? 60) },
+      },
+    );
+  }
+
   let raw: unknown;
   try {
     raw = await req.json();
